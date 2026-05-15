@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from "axios";
-import { allMovies } from './AllMoviesData';
 import './Payment.css';
+import API_BASE_URL from '../config';
 
 const Payment = ({ selectedSeats, bookingSelection, selectedCity, movieId, onPaymentSuccess, onBack }) => {
 
-  const movie = allMovies.find(m => m.id === parseInt(movieId));
-  const seatPrice = 200;
-  const totalPrice = selectedSeats.length * seatPrice;
+  const [allMovies, setAllMovies] = useState([]);
 
   const [paymentMethod, setPaymentMethod] = useState('card');
 
@@ -24,146 +22,252 @@ const Payment = ({ selectedSeats, bookingSelection, selectedCity, movieId, onPay
   const [selectedWallet, setSelectedWallet] = useState('');
   const [walletPin, setWalletPin] = useState('');
 
+  const seatPrice = 200;
+
+  // ----------------------------
+  // FETCH MOVIES FROM BACKEND
+  // ----------------------------
+  useEffect(() => {
+
+    fetch(`${API_BASE_URL}/movies`)
+      .then(res => res.json())
+      .then(data => {
+
+        const formattedMovies = data.map(movie => ({
+          id: movie.movieId,
+          title: movie.title,
+          image: movie.poster,
+          rating: movie.rating,
+          votes: movie.votes,
+          genre: movie.genre.join(" • "),
+          language: movie.language.join(","),
+          status: movie.status,
+          duration: movie.duration,
+          releaseDate: movie.releaseDate
+        }));
+
+        setAllMovies(formattedMovies);
+
+      })
+      .catch(err => console.error(err));
+
+  }, []);
+
+  const movie = allMovies.find(m => m.id === parseInt(movieId));
+  if (!movie) {
+  return <div className="payment-page">Loading booking details...</div>;
+}
+
+  const totalPrice = selectedSeats.length * seatPrice;
+
+  // ----------------------------
+  // INPUT HANDLER
+  // ----------------------------
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setCardDetails(prev => ({ ...prev, [name]: value }));
   };
 
+  // ----------------------------
+  // PAYMENT FUNCTION
+  // ----------------------------
   const handlePay = async () => {
 
-    // VALIDATIONS — unchanged
+    // CARD VALIDATION
     if (paymentMethod === 'card') {
+
       if (!cardDetails.number || !cardDetails.expiry || !cardDetails.cvv || !cardDetails.name) {
         alert('Please fill all card details');
         return;
       }
+
       if (cardDetails.number.length !== 16) {
         alert('Please enter a valid 16-digit card number');
         return;
       }
+
       if (cardDetails.cvv.length !== 3) {
         alert('Please enter a valid 3-digit CVV');
         return;
       }
     }
 
+    // UPI VALIDATION
     if (paymentMethod === 'upi') {
+
       if (!selectedUpiApp) {
         alert('Please select a UPI app');
         return;
       }
+
       if (!upiId || !upiId.includes('@')) {
         alert('Please enter a valid UPI ID');
         return;
       }
     }
 
+    // WALLET VALIDATION
     if (paymentMethod === 'wallet') {
+
       if (!selectedWallet) {
         alert('Please select a wallet');
         return;
       }
+
       if (!walletPin || walletPin.length !== 4) {
         alert('Please enter a valid 4-digit PIN');
         return;
       }
     }
 
-    // ---------------------------------------------
-    // PAYMENT SUCCESSFUL → NOW BOOK SEATS IN BACKEND
-    // ---------------------------------------------
+    // ----------------------------
+    // BOOK SEATS IN BACKEND
+    // ----------------------------
     try {
-      await axios.post("http://localhost:5000/api/showtime/bookSeats", {
-        movieId,
-        theatreName: bookingSelection.theatre.name,
-        date: bookingSelection.date.toDateString(),
-        time: bookingSelection.time,
-        seats: selectedSeats
-      });
+
+      await axios.post(
+        `${API_BASE_URL}/showtime/bookSeats`,
+        {
+          movieId,
+          theatreName: bookingSelection.theatre.name,
+          date: bookingSelection.date.toDateString(),
+          time: bookingSelection.time,
+          seats: selectedSeats
+        }
+      );
 
       alert('Payment successful! Your tickets are booked.');
+
       onPaymentSuccess();
 
     } catch (err) {
+
       console.error(err);
       alert("Payment succeeded, but booking failed. Please try again.");
+
     }
+
   };
 
-
+  // ----------------------------
+  // INVALID BOOKING PROTECTION
+  // ----------------------------
   if (!bookingSelection) {
+
     return (
       <div className="payment-page">
+
         <header className="header">
           <button onClick={onBack}>Back</button>
           <h1>Invalid Booking Information</h1>
         </header>
+
         <main>
           <div className="error-message">
             <p>Booking information is missing. Please go back and try again.</p>
             <button onClick={onBack}>Go Back</button>
           </div>
         </main>
+
       </div>
     );
   }
 
+  // ----------------------------
+  // MOVIE LOADING PROTECTION
+  // ----------------------------
+  if (!movie) {
+
+    return (
+      <div className="payment-page">
+        <div className="loading">Loading movie...</div>
+      </div>
+    );
+
+  }
+
   return (
+
     <div className="payment-page">
+
       <header className="header">
         <button onClick={onBack}>Back</button>
         <h1>Payment for {movie.title}</h1>
       </header>
 
       <main>
+
         <div className="payment-container">
 
-          {/* Summary unchanged */}
+          {/* BOOKING SUMMARY */}
           <div className="booking-summary">
+
             <h2>Booking Summary</h2>
+
             <div className="summary-grid">
+
               <div className="summary-item">
                 <span className="label">Movie:</span>
                 <span className="value">{movie.title}</span>
               </div>
+
               <div className="summary-item">
                 <span className="label">City:</span>
                 <span className="value">{selectedCity}</span>
               </div>
+
               <div className="summary-item">
                 <span className="label">Theatre:</span>
                 <span className="value">{bookingSelection.theatre.name}</span>
               </div>
+
               <div className="summary-item">
                 <span className="label">Address:</span>
                 <span className="value">{bookingSelection.theatre.address}</span>
               </div>
+
               <div className="summary-item">
                 <span className="label">Date:</span>
                 <span className="value">
-                  {bookingSelection.date.toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+
+                  {bookingSelection.date.toLocaleDateString(
+                    'en-US',
+                    {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }
+                  )}
+
                 </span>
               </div>
+
               <div className="summary-item">
                 <span className="label">Showtime:</span>
                 <span className="value">{bookingSelection.time}</span>
               </div>
+
               <div className="summary-item">
                 <span className="label">Seats:</span>
-                <span className="value">{selectedSeats.map(s => s + 1).join(', ')}</span>
+                <span className="value">
+                  {selectedSeats.map(s => s + 1).join(', ')}
+                </span>
               </div>
+
               <div className="summary-item total">
                 <span className="label">Total Amount:</span>
                 <span className="value">₹{totalPrice}</span>
               </div>
+
             </div>
+
           </div>
 
+          {/* PAYMENT FORM (UNCHANGED UI) */}
+
+          {/* YOUR EXISTING PAYMENT FORM CODE CONTINUES HERE */}
+          {/* No functional changes required */}
 
           {/* Payment UI unchanged */}
           <div className="payment-form">
@@ -259,21 +363,21 @@ const Payment = ({ selectedSeats, bookingSelection, selectedCity, movieId, onPay
                       className={`upi-app-btn ${selectedUpiApp === 'phonepay' ? 'active' : ''}`}
                       onClick={() => setSelectedUpiApp('phonepay')}
                     >
-                      <img src="/images/phonepay.png" alt="PhonePe" className="upi-logo" />
+                      <img src="https://res.cloudinary.com/dsfmvdxgi/image/upload/v1775304232/phonepay_cd09tq.png" alt="PhonePe" className="upi-logo" />
                     </button>
 
                     <button 
                       className={`upi-app-btn ${selectedUpiApp === 'googlepay' ? 'active' : ''}`}
                       onClick={() => setSelectedUpiApp('googlepay')}
                     >
-                      <img src="/images/googlepay.png" alt="Google Pay" className="upi-logo" />
+                      <img src="https://res.cloudinary.com/dsfmvdxgi/image/upload/v1775304295/gpay_f9qrao.png" alt="Google Pay" className="upi-logo" />
                     </button>
 
                     <button 
                       className={`upi-app-btn ${selectedUpiApp === 'paytm' ? 'active' : ''}`}
                       onClick={() => setSelectedUpiApp('paytm')}
                     >
-                      <img src="/images/paytm.png" alt="Paytm" className="upi-logo" />
+                      <img src="https://res.cloudinary.com/dsfmvdxgi/image/upload/v1775304321/paytm_pzqafl.png" alt="Paytm" className="upi-logo" />
                     </button>
                   </div>
                 </div>
@@ -341,13 +445,19 @@ const Payment = ({ selectedSeats, bookingSelection, selectedCity, movieId, onPay
 
             <div className="security-note">
               <p>🔒 Your payment is secure and encrypted</p>
-            </div>
+                        </div>
           </div>
 
+
+
         </div>
+
       </main>
+
     </div>
+
   );
+
 };
 
 export default Payment;

@@ -1,48 +1,34 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './AllMovies.css';
-import { allMovies } from './AllMoviesData';
-import { theatresByCity } from './TheatresData';
+import API_BASE_URL from '../config';
 
 const AllMovies = ({ user, onLogout, onAuthButtonClick, onGreetingClick, onBackToHome, onMovieSelect, selectedCity, setSelectedCity }) => {
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('All Languages');
   const [selectedGenre, setSelectedGenre] = useState('All Genres');
+  const [allMovies, setAllMovies] = useState([]);
+  const [cityTheatres, setCityTheatres] = useState({});
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+
   const dropdownRef = useRef(null);
   const dashboardRef = useRef(null);
 
   const cities = [
-    'Select City',
-    'Ahmedabad',
-    'Bangalore',
-    'Calicut',
-    'Chennai',
-    'Coimbatore',
-    'Delhi',
-    'Guntur',
-    'Hyderabad',
-    'Kochi',
-    'Kolkata',
-    'Madurai',
-    'Mumbai',
-    'Mysore',
-    'Nizamabad',
-    'Trivandrum',
-    'Vijayawada',
-    'Vizag',
-    'Warangal'
+    'Select City','Ahmedabad','Bangalore','Calicut','Chennai','Coimbatore',
+    'Delhi','Guntur','Hyderabad','Kochi','Kolkata','Madurai','Mumbai',
+    'Mysore','Nizamabad','Trivandrum','Vijayawada','Vizag','Warangal'
   ];
 
   const allLanguages = [
-    'All Languages', 'English', 'Hindi', 'Tamil', 'Telugu', 'Kannada', 
-    'Malayalam', 'Bengali', 'Marathi', 'Gujarati', 'Punjabi'
+    'All Languages','English','Hindi','Tamil','Telugu','Kannada','Malayalam',
+    'Bengali','Marathi','Gujarati','Punjabi'
   ];
 
   const allGenres = [
-    'All Genres', 'Action', 'Drama', 'Comedy', 'Thriller',
-    'Romance', 'Sci-Fi', 'Horror', 'Adventure', 'Fantasy',
-    'Animation', 'Crime', 'Mystery', 'Family', 'Musical'
+    'All Genres','Action','Drama','Comedy','Thriller','Romance','Sci-Fi',
+    'Horror','Adventure','Fantasy','Animation','Crime','Mystery','Family','Musical'
   ];
 
   const dashboardItems = [
@@ -52,36 +38,29 @@ const AllMovies = ({ user, onLogout, onAuthButtonClick, onGreetingClick, onBackT
     { id: 4, label: 'Help'}
   ];
 
-  // Get available languages and genres for selected city
+
+
+  // ⭐ GET AVAILABLE LANGUAGES AND GENRES
   const getAvailableLanguagesAndGenres = () => {
+
     if (selectedCity === 'Select City') {
       return { languages: allLanguages, genres: allGenres };
     }
 
-    const cityTheatres = theatresByCity[selectedCity];
-    if (!cityTheatres) return { languages: [], genres: allGenres };
+    const theatres = cityTheatres[selectedCity];
 
-    // Get unique languages from theatres in the city
+    if (!theatres) return { languages: [], genres: allGenres };
+
     const availableLanguages = new Set();
-    cityTheatres.forEach(theatre => {
+
+    theatres.forEach(theatre => {
       availableLanguages.add(theatre.language);
     });
 
-    // Get all movie IDs available in the city
-    const availableMovieIds = new Set();
-    cityTheatres.forEach(theatre => {
-      theatre.movies.forEach(movieId => {
-        availableMovieIds.add(movieId);
-      });
-    });
-
-    // Get genres from available movies
     const availableGenres = new Set(['All Genres']);
+
     allMovies.forEach(movie => {
-      if (availableMovieIds.has(movie.id)) {
-        const movieGenres = movie.genre.split(' • ');
-        movieGenres.forEach(genre => availableGenres.add(genre.trim()));
-      }
+      movie.genre.split(' • ').forEach(g => availableGenres.add(g.trim()));
     });
 
     return {
@@ -92,58 +71,119 @@ const AllMovies = ({ user, onLogout, onAuthButtonClick, onGreetingClick, onBackT
 
   const { languages, genres } = getAvailableLanguagesAndGenres();
 
-  // Close dropdowns when clicking outside
+
+
+  // CLOSE DROPDOWNS
   useEffect(() => {
+
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowLanguageDropdown(false);
       }
+
       if (dashboardRef.current && !dashboardRef.current.contains(event.target)) {
         setShowDashboard(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
+
   }, []);
 
-  // Get movies available in selected city
+
+
+  // FETCH MOVIES
+  useEffect(() => {
+
+    fetch(`${API_BASE_URL}/movies`)
+      .then(res => res.json())
+      .then(data => {
+
+        const formattedMovies = data.map(movie => ({
+          id: movie.movieId,
+          title: movie.title,
+          image: movie.poster,
+          rating: movie.rating,
+          votes: movie.votes,
+          genre: movie.genre.join(" • "),
+          language: movie.language.join(","),
+          status: movie.status,
+          duration: movie.duration,
+          releaseDate: movie.releaseDate
+        }));
+
+        setAllMovies(formattedMovies);
+
+      })
+      .catch(err => console.error(err));
+
+  }, []);
+
+
+
+  // FETCH THEATRES
+  useEffect(() => {
+
+    fetch(`${API_BASE_URL}/theatres/allCities`)
+      .then(res => res.json())
+      .then(data => {
+        setCityTheatres(data);
+      })
+      .catch(err => console.error("Error loading theatres:", err));
+
+  }, []);
+
+
+
+  // GET MOVIES AVAILABLE IN CITY
   const getMoviesForSelectedCity = () => {
+
     if (selectedCity === 'Select City') {
-      return allMovies; // Show all movies when no city is selected
+      return allMovies;
     }
 
-    const cityTheatres = theatresByCity[selectedCity];
-    if (!cityTheatres) return [];
+    const theatres = cityTheatres[selectedCity];
 
-    // Get all unique movie IDs from all theatres in the selected city
-    const availableMovieIds = new Set();
-    cityTheatres.forEach(theatre => {
-      theatre.movies.forEach(movieId => {
-        availableMovieIds.add(movieId);
-      });
-    });
+    if (!theatres) return [];
 
-    // Filter movies that are available in the selected city
-    return allMovies.filter(movie => availableMovieIds.has(movie.id));
+    return allMovies.filter(movie =>
+      theatres.some(t => movie.language.includes(t.language))
+    );
   };
+
+
 
   const availableMoviesInCity = getMoviesForSelectedCity();
 
-  // Filter movies based on selections - Only show "now-showing" movies
+
+
+  // FILTER MOVIES
   const filteredMovies = availableMoviesInCity.filter(movie => {
+
     const isNowShowing = movie.status === 'now-showing';
-    const matchesLanguage = selectedLanguage === 'All Languages' || movie.language.includes(selectedLanguage);
-    const matchesGenre = selectedGenre === 'All Genres' || movie.genre.includes(selectedGenre);
-    const matchesSearch = searchTerm === '' || 
+
+    const matchesLanguage =
+      selectedLanguage === 'All Languages' ||
+      movie.language.includes(selectedLanguage);
+
+    const matchesGenre =
+      selectedGenre === 'All Genres' ||
+      movie.genre.includes(selectedGenre);
+
+    const matchesSearch =
+      searchTerm === '' ||
       movie.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       movie.genre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       movie.language.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     return isNowShowing && matchesLanguage && matchesGenre && matchesSearch;
   });
+
+
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -193,6 +233,7 @@ const AllMovies = ({ user, onLogout, onAuthButtonClick, onGreetingClick, onBackT
     setSelectedGenre('All Genres');
     setSearchTerm('');
   };
+
 
   return (
     <div className="all-movies-page">

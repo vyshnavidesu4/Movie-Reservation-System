@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Auth.css';
+import API_BASE_URL from '../config';
 
 const Signup = ({ onSignupSuccess, onSwitchToLogin, onClose }) => {
   const [formData, setFormData] = useState({
@@ -82,9 +83,7 @@ const Signup = ({ onSignupSuccess, onSwitchToLogin, onClose }) => {
         preferredName: formData.preferredName,
         email: formData.email
       };
-      
-      // Store user data in localStorage (simulating backend)
-      fetch("http://localhost:5000/api/auth/signup", {
+      fetch(`${API_BASE_URL}/auth/signup`, {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify(formData)

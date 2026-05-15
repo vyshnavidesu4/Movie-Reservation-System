@@ -1,100 +1,176 @@
 import React, { useState, useEffect } from 'react';
 import './MovieDetails.css';
-import { allMovies } from './AllMoviesData';
-import { theatresByCity } from './TheatresData';
 import RateNow from './RateNow';
+import API_BASE_URL from '../config';
 
 const MovieDetails = ({ movieId, user, onLogout, onAuthButtonClick, onGreetingClick, onBack, selectedCity, setSelectedCity, onBookTickets }) => {
+
   const [movie, setMovie] = useState(null);
   const [isSticky, setIsSticky] = useState(false);
   const [availableCities, setAvailableCities] = useState([]);
   const [showRateNow, setShowRateNow] = useState(false);
+  const [cityTheatres, setCityTheatres] = useState({});
 
+
+  // ⭐ FIND CITIES WHERE MOVIE IS AVAILABLE
   const getAvailableCitiesForMovie = (movieId) => {
-    const citiesWithMovie = [];
-    
-    // Check each city to see if any theatre is playing this movie
-    Object.keys(theatresByCity).forEach(city => {
-      const theatres = theatresByCity[city];
-      const hasMovie = theatres.some(theatre => 
-        theatre.movies.includes(parseInt(movieId))
-      );
-      
-      if (hasMovie) {
-        citiesWithMovie.push(city);
-      }
-    });
-    
-    return citiesWithMovie;
-  };
 
+  const citiesWithMovie = [];
+
+  Object.keys(cityTheatres).forEach(city => {
+
+    const theatres = cityTheatres[city];
+
+    const hasMovie = theatres.some(theatre =>
+  movie?.language?.includes(theatre.language)
+);
+
+    if (hasMovie) {
+      citiesWithMovie.push(city);
+    }
+
+  });
+
+  return citiesWithMovie;
+};
+
+
+  // ⭐ FETCH MOVIES
   useEffect(() => {
-    const foundMovie = allMovies.find(m => m.id === parseInt(movieId));
-    setMovie(foundMovie);
 
-    if (foundMovie) {
+    fetch(`${API_BASE_URL}/movies`)
+      .then(res => res.json())
+      .then(data => {
+
+        const formattedMovies = data.map(movie => ({
+          id: movie.movieId,
+          title: movie.title,
+          image: movie.poster,
+          rating: movie.rating,
+          votes: movie.votes,
+          genre: movie.genre.join(" • "),
+          language: movie.language.join(","),
+          status: movie.status,
+          duration: movie.duration,
+          releaseDate: movie.releaseDate
+        }));
+
+        const foundMovie = formattedMovies.find(m => m.id === parseInt(movieId));
+        setMovie(foundMovie);
+
+      })
+      .catch(err => console.error(err));
+
+  }, [movieId]);
+
+
+  // ⭐ FETCH THEATRES FROM BACKEND
+  useEffect(() => {
+
+    fetch(`${API_BASE_URL}/theatres/allCities`)
+      .then(res => res.json())
+      .then(data => {
+        setCityTheatres(data);
+      })
+      .catch(err => console.error("Error loading theatres:", err));
+
+  }, []);
+
+
+  // ⭐ DETERMINE AVAILABLE CITIES AFTER MOVIE + THEATRES LOAD
+  useEffect(() => {
+
+    if (movie && Object.keys(cityTheatres).length > 0) {
+
       const cities = getAvailableCitiesForMovie(movieId);
       setAvailableCities(cities);
+
     }
+
+  }, [movie, cityTheatres]);
+
+
+  // ⭐ SCROLL LISTENER
+  useEffect(() => {
 
     const handleScroll = () => {
       setIsSticky(window.scrollY > 400);
     };
 
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [movieId]);
 
+    return () => window.removeEventListener('scroll', handleScroll);
+
+  }, []);
+
+
+  // ⭐ BOOK TICKETS
   const handleBookTickets = () => {
+
     if (!user) {
       alert('Please login to book tickets');
       onAuthButtonClick(movieId);
       return;
     }
+
     if (selectedCity === 'Select City') {
       alert('Please select a city first');
       return;
     }
+
     onBookTickets();
   };
 
+
+  // ⭐ NOTIFY ME
   const handleNotifyMe = () => {
+
     if (!user) {
       alert('Please signup to get notifications');
       onAuthButtonClick(movieId);
       return;
     }
+
     alert(`You will be notified about "${movie.title}"`);
   };
 
+
   const handleRateNow = () => {
+
     if (!user) {
       alert('Please sign in to rate movies');
       onAuthButtonClick(movieId);
       return;
     }
+
     setShowRateNow(true);
   };
+
 
   const handleCloseRateNow = () => {
     setShowRateNow(false);
   };
 
+
   const handleSubmitRating = (rating, review) => {
+
     console.log(`Rating submitted for ${movie.title}:`, { rating, review });
+
     alert(`Thank you for rating "${movie.title}" with ${rating}/10 stars!`);
-    
-    // Here you can add logic to save the rating to your backend
-    // For example: updateMovieRating(movie.id, rating, review);
+
+    // Future backend save
   };
 
+
   const handleAuthClick = () => {
+
     if (user) {
       onGreetingClick();
     } else {
       onAuthButtonClick(movieId);
     }
   };
+
 
   if (!movie) {
     return (
@@ -104,6 +180,7 @@ const MovieDetails = ({ movieId, user, onLogout, onAuthButtonClick, onGreetingCl
       </div>
     );
   }
+
 
   const castData = getCastData(movie.title);
   const crewData = getCrewData(movie.title);

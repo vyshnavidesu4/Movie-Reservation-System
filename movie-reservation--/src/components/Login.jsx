@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Auth.css';
+import API_BASE_URL from '../config';
 
 const Login = ({ onLoginSuccess, onSwitchToSignup, onClose }) => {
   const [formData, setFormData] = useState({
@@ -47,8 +48,7 @@ const Login = ({ onLoginSuccess, onSwitchToSignup, onClose }) => {
     e.preventDefault();
     
     if (validateForm()) {
-      // 🔥 UPDATED: Authenticate with backend (replaces localStorage logic)
-      fetch("http://localhost:5000/api/auth/login", {
+      fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)

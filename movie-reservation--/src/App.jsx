@@ -8,11 +8,9 @@ import BookingSelection from './components/BookingSelection';
 import SeatSelection from './components/SeatSelection';
 import Payment from './components/Payment';
 import YourData from './components/YourData';
-
-// ⭐ NEW — Ticket Page
 import TicketPage from './components/TicketPage';
-
 import './App.css';
+import API_BASE_URL from './config';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -150,7 +148,7 @@ function App() {
   const handleDeleteAccount = () => {
     if (!user) return;
 
-    fetch("http://localhost:5000/api/auth/delete", {
+    fetch(`${API_BASE_URL}/auth/delete`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: user.username })

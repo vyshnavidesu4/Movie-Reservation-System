@@ -1,11 +1,42 @@
-import React from "react";
-import { allMovies } from "./AllMoviesData";
+import React, { useEffect, useState, useRef } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import "./TicketPage.css";
+import API_BASE_URL from '../config';
 
 const TicketPage = ({ bookingData, onBackHome }) => {
+
+  const [allMovies, setAllMovies] = useState([]);
+  const qrRef = useRef(null);
+
+  // Fetch movies from backend
+  useEffect(() => {
+
+    fetch(`${API_BASE_URL}/movies`)
+      .then(res => res.json())
+      .then(data => {
+
+        const formattedMovies = data.map(movie => ({
+          id: movie.movieId,
+          title: movie.title,
+          image: movie.poster,
+          rating: movie.rating,
+          votes: movie.votes,
+          genre: movie.genre.join(" • "),
+          language: movie.language.join(","),
+          status: movie.status,
+          duration: movie.duration,
+          releaseDate: movie.releaseDate
+        }));
+
+        setAllMovies(formattedMovies);
+
+      })
+      .catch(err => console.error(err));
+
+  }, []);
+
   if (!bookingData) {
     return (
       <div className="ticket-page">
@@ -15,9 +46,19 @@ const TicketPage = ({ bookingData, onBackHome }) => {
     );
   }
 
-  const movie = allMovies.find(m => m.id === parseInt(bookingData.movieId));
+  const movie = allMovies.find(
+    m => m.id === parseInt(bookingData.movieId)
+  );
 
-  // Map city -> language (same idea as your theatres data)
+  if (!movie) {
+    return (
+      <div className="ticket-page">
+        <h2>Loading ticket...</h2>
+      </div>
+    );
+  }
+
+  // Map city -> language
   const cityLanguageMap = {
     Ahmedabad: "Hindi",
     Bangalore: "Kannada",
@@ -39,7 +80,6 @@ const TicketPage = ({ bookingData, onBackHome }) => {
     Warangal: "Telugu",
   };
 
-  // Use city-based language first, fall back to movie's first language
   const selectedLanguage =
     cityLanguageMap[bookingData.city] ||
     movie.language?.split(",")[0] ||
@@ -47,15 +87,23 @@ const TicketPage = ({ bookingData, onBackHome }) => {
 
   // Download Ticket PDF
   const downloadPDF = async () => {
+
     const ticketElement = document.getElementById("ticket-card");
-    const canvas = await html2canvas(ticketElement, { scale: 2 });
+
+    const canvas = await html2canvas(ticketElement, {
+      scale: 3,
+      useCORS: true
+    });
+
     const imgData = canvas.toDataURL("image/png");
 
     const pdf = new jsPDF("p", "mm", "a4");
+
     const width = pdf.internal.pageSize.getWidth();
     const height = (canvas.height * width) / canvas.width;
 
     pdf.addImage(imgData, "PNG", 0, 10, width, height);
+
     pdf.save("MovieTicket.pdf");
   };
 
@@ -74,13 +122,14 @@ const TicketPage = ({ bookingData, onBackHome }) => {
         {/* Movie Title */}
         <h2 className="ticket-movie-title">{movie.title}</h2>
 
-        {/* Correct Language (based on city) */}
+        {/* Language */}
         <p className="ticket-language">
           Language: <strong>{selectedLanguage}</strong>
         </p>
 
         {/* Ticket Info */}
         <div className="ticket-details">
+
           <div className="ticket-row">
             <span className="label">Date:</span>
             <span className="value">{bookingData.date}</span>
@@ -107,23 +156,28 @@ const TicketPage = ({ bookingData, onBackHome }) => {
             <span className="value">{bookingData.seats.join(", ")}</span>
           </div>
 
-          {/* Amount (₹200 per seat) */}
+          {/* Amount */}
           <div className="ticket-row">
             <span className="label">Amount:</span>
             <span className="value">
               ₹{bookingData.seats.length * 200}
             </span>
           </div>
+
         </div>
 
         {/* QR Code */}
         <div className="qr-section">
-          <QRCodeCanvas
-            value={JSON.stringify(bookingData)}
-            size={150}
-          />
+          <div ref={qrRef}>
+            <QRCodeCanvas
+              value={JSON.stringify(bookingData)}
+              size={150}
+              includeMargin={true}
+            />
+          </div>
           <p className="qr-text">Scan to verify ticket</p>
         </div>
+
       </div>
 
       {/* Buttons */}
@@ -134,6 +188,7 @@ const TicketPage = ({ bookingData, onBackHome }) => {
       <button className="home-btn" onClick={onBackHome}>
         ⬅ Back to Home
       </button>
+
     </div>
   );
 };

@@ -1,38 +1,78 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { allMovies } from './AllMoviesData';
-import { movieTheatres } from './MovieTheatres';   // ✅ NEW
 import './BookingSelection.css';
+import API_BASE_URL from '../config';
 
 const BookingSelection = ({ selectedCity, onSeatSelection, onBack, movieId, user }) => {
+  const [allMovies, setAllMovies] = useState([]);
+  const [cityTheatres, setCityTheatres] = useState([]);
+
+  useEffect(() => {
+
+  fetch(`${API_BASE_URL}/movies`)
+    .then(res => res.json())
+    .then(data => {
+
+      const formattedMovies = data.map(movie => ({
+        id: movie.movieId,
+        title: movie.title,
+        image: movie.poster,
+        rating: movie.rating,
+        votes: movie.votes,
+        genre: movie.genre.join(" • "),
+        language: movie.language.join(","),
+        status: movie.status,
+        duration: movie.duration,
+        releaseDate: movie.releaseDate
+      }));
+
+      
+
+      setAllMovies(formattedMovies);
+
+    })
+    .catch(err => console.error(err));
+
+}, []);
+
+useEffect(() => {
+
+  if (!selectedCity || !movieId) return;
+
+  fetch(`${API_BASE_URL}/theatres/${selectedCity}/${movieId}`)
+    .then(res => res.json())
+    .then(data => {
+
+      const formattedTheatres = data.map((theatre, index) => ({
+        id: index + 1,
+        name: theatre.name,
+        address: theatre.address,
+        language: theatre.language
+      }));
+
+      setCityTheatres(formattedTheatres);
+
+    })
+    .catch(err => console.error("Error loading theatres:", err));
+
+}, [selectedCity, movieId]);
+
   const movie = allMovies.find(m => m.id === parseInt(movieId));
 
   // -------------------------------
   // ✅ GET THEATRES FOR THIS MOVIE + CITY
   // -------------------------------
-  const theatresForMovie = movie ? movieTheatres[movie.title] || [] : [];
-
-  // Filter entries for selected city
-  const cityEntry = theatresForMovie.find(t => t.city === selectedCity);
-
-  // Convert theatre names into objects
-  const theatres = cityEntry
-    ? cityEntry.theatres.map((theatreName, index) => ({
-        id: index + 1,
-        name: theatreName,
-        address: selectedCity,          // Simple static address
-      }))
-    : [];
-
   // -------------------------------
+// GET THEATRES FROM BACKEND
+// -------------------------------
+const theatres = cityTheatres;
+const [selectedDate, setSelectedDate] = useState(null);
+const [selectedTheatre, setSelectedTheatre] = useState(null);
+const [selectedTime, setSelectedTime] = useState(null);
+const [currentTime, setCurrentTime] = useState(new Date());
 
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedTheatre, setSelectedTheatre] = useState(null);
-  const [selectedTime, setSelectedTime] = useState(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
-
-  const theatresSectionRef = useRef(null);
-  const datesSectionRef = useRef(null);
-  const proceedSectionRef = useRef(null);
+const theatresSectionRef = useRef(null);
+const datesSectionRef = useRef(null);
+const proceedSectionRef = useRef(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -308,4 +348,4 @@ const BookingSelection = ({ selectedCity, onSeatSelection, onBack, movieId, user
   );
 };
 
-export default BookingSelection;
+export default BookingSelection; 

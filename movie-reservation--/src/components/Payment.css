@@ -355,3 +355,75 @@
       height: 20px;
     }
   }
+
+  /* ------------------------------------------------ */
+/* Booking Summary Visibility Fix (ADDED SECTION) */
+/* ------------------------------------------------ */
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 0.8rem 1rem;
+  margin-top: 1rem;
+}
+
+.summary-item {
+  display: contents;
+}
+
+.label {
+  color: #bbbbbb;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.value {
+  color: #ffffff;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.summary-item.total .label {
+  font-size: 1.05rem;
+}
+
+.summary-item.total .value {
+  color: #e50914;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* ------------------------------------------------ */
+/* FORCE BOOKING SUMMARY TEXT VISIBILITY */
+/* ------------------------------------------------ */
+
+.booking-summary {
+  color: #ffffff;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 10px 15px;
+  margin-top: 15px;
+}
+
+.summary-item {
+  display: contents;
+}
+
+.booking-summary .label {
+  color: #bbbbbb;
+  font-weight: 600;
+}
+
+.booking-summary .value {
+  color: #ffffff !important;
+  font-weight: 500;
+}
+
+.summary-item.total .value {
+  color: #e50914 !important;
+  font-size: 1.1rem;
+  font-weight: 700;
+}

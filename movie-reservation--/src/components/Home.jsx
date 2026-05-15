@@ -1,45 +1,34 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './Home.css';
-import { allMovies } from './AllMoviesData';
-import { theatresByCity } from './TheatresData';
+import API_BASE_URL from '../config';
 
-const Home = ({ 
-  user, 
-  onLogout, 
-  onAuthButtonClick, 
-  onGreetingClick, 
-  onSeeAllMovies, 
-  onMovieSelect, 
-  selectedCity, 
+const Home = ({
+
+  user,
+  onLogout,
+  onAuthButtonClick,
+  onGreetingClick,
+  onSeeAllMovies,
+  onMovieSelect,
+  selectedCity,
   setSelectedCity,
-  onOpenUserData    
+  onOpenUserData
 }) => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('All Languages');
   const [selectedGenre, setSelectedGenre] = useState('All Genres');
+  const [allMovies, setAllMovies] = useState([]);
+  const [cityTheatres, setCityTheatres] = useState({});
+  const [cities, setCities] = useState(["Select City"]);
+  const [languages, setLanguages] = useState(["All Languages"]);
+  const [genres, setGenres] = useState(["All Genres"]);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
 
   const sliderRef = useRef(null);
   const dropdownRef = useRef(null);
   const dashboardRef = useRef(null);
-
-  const cities = [
-    'Select City','Ahmedabad','Bangalore','Calicut','Chennai','Coimbatore','Delhi',
-    'Guntur','Hyderabad','Kochi','Kolkata','Madurai','Mumbai','Mysore','Nizamabad',
-    'Trivandrum','Vijayawada','Vizag','Warangal'
-  ];
-
-  const allLanguages = [
-    'All Languages','English','Hindi','Tamil','Telugu','Kannada','Malayalam',
-    'Bengali','Marathi','Gujarati','Punjabi'
-  ];
-
-  const allGenres = [
-    'All Genres','Action','Drama','Comedy','Thriller','Romance','Sci-Fi','Horror',
-    'Adventure','Fantasy','Animation','Crime','Mystery','Family','Musical'
-  ];
 
   const dashboardItems = [
     { id: 1, label: 'Your Data' },
@@ -48,142 +37,297 @@ const Home = ({
     { id: 4, label: 'Help' }
   ];
 
-  // languages + genres
-  const getAvailableLanguagesAndGenres = () => {
-    if (selectedCity === 'Select City') {
-      return { languages: allLanguages, genres: allGenres };
-    }
 
-    const cityTheatres = theatresByCity[selectedCity];
-    if (!cityTheatres) return { languages: [], genres: allGenres };
 
-    const availableLanguages = new Set();
-    const availableMovieIds = new Set();
-
-    cityTheatres.forEach(theatre => {
-      availableLanguages.add(theatre.language);
-      theatre.movies.forEach(id => availableMovieIds.add(id));
-    });
-
-    const availableGenres = new Set(['All Genres']);
-    allMovies.forEach(movie => {
-      if (availableMovieIds.has(movie.id)) {
-        movie.genre.split(' • ').forEach(g => availableGenres.add(g.trim()));
-      }
-    });
-
-    return {
-      languages: ['All Languages', ...Array.from(availableLanguages)],
-      genres: Array.from(availableGenres)
-    };
-  };
-
-  const { languages, genres } = getAvailableLanguagesAndGenres();
-
-  // close dropdowns
+  // Close dropdowns
   useEffect(() => {
+
     const handleClickOutside = (e) => {
+
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setShowLanguageDropdown(false);
       }
+
       if (dashboardRef.current && !dashboardRef.current.contains(e.target)) {
         setShowDashboard(false);
       }
+
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+
   }, []);
 
-  // get movies for selected city
+
+
+  // Fetch Movies
+  useEffect(() => {
+
+    fetch(`${API_BASE_URL}/movies`)
+      .then(res => res.json())
+      .then(data => {
+
+        const formattedMovies = data.map(movie => ({
+          id: movie.movieId,
+          title: movie.title,
+          image: movie.poster,
+          rating: movie.rating,
+          votes: movie.votes,
+          genre: movie.genre.join(" • "),
+          language: movie.language.join(","),
+          status: movie.status,
+          duration: movie.duration,
+          releaseDate: movie.releaseDate
+        }));
+
+        setAllMovies(formattedMovies);
+
+      })
+      .catch(err => console.error(err));
+
+  }, []);
+
+
+
+  // Fetch Theatres + Cities
+  useEffect(() => {
+
+    fetch(`${API_BASE_URL}/theatres/allCities`)
+      .then(res => res.json())
+      .then(data => {
+
+        setCityTheatres(data);
+
+        const cityNames = Object.keys(data);
+        setCities(["Select City", ...cityNames]);
+
+      })
+      .catch(err => console.error("Error loading theatres:", err));
+
+  }, []);
+
+
+
+  // Movies available in selected city
   const getMoviesForSelectedCity = () => {
-    if (selectedCity === 'Select City') return allMovies;
 
-    const cityTheatres = theatresByCity[selectedCity];
-    if (!cityTheatres) return [];
+    if (selectedCity === "Select City") return allMovies;
 
-    const idSet = new Set();
-    cityTheatres.forEach(th => th.movies.forEach(id => idSet.add(id)));
+    const theatres = cityTheatres[selectedCity];
 
-    return allMovies.filter(m => idSet.has(m.id));
+    if (!theatres) return [];
+
+    return allMovies.filter(movie =>
+      theatres.some(t => movie.language.includes(t.language))
+    );
+
   };
 
   const availableMoviesInCity = getMoviesForSelectedCity();
 
-  // filtering
+
+
+  // Languages based on city
+  useEffect(() => {
+
+    if (selectedCity === "Select City") {
+
+      setLanguages(["All Languages"]);
+      return;
+
+    }
+
+    const theatres = cityTheatres[selectedCity];
+
+    if (!theatres) return;
+
+    const cityLanguages = [...new Set(theatres.map(t => t.language))];
+
+    setLanguages(cityLanguages);
+
+  }, [selectedCity, cityTheatres]);
+
+
+
+  // Genres based on movies
+  useEffect(() => {
+
+    let movies = availableMoviesInCity;
+
+    if (selectedLanguage !== "All Languages") {
+
+      movies = movies.filter(movie =>
+        movie.language.includes(selectedLanguage)
+      );
+
+    }
+
+    const genreSet = new Set();
+
+    movies.forEach(movie => {
+
+      movie.genre?.split(" • ").forEach(g => {
+        genreSet.add(g.trim());
+      });
+
+    });
+
+    setGenres(["All Genres", ...genreSet]);
+
+  }, [availableMoviesInCity, selectedLanguage]);
+
+
+
+  // Reset filters when city changes
+  useEffect(() => {
+
+    setSelectedLanguage("All Languages");
+    setSelectedGenre("All Genres");
+
+  }, [selectedCity]);
+
+
+
+  // Filtering movies
   const filteredPopularMovies = availableMoviesInCity.filter(movie => {
+
     const searchLower = searchTerm.toLowerCase();
+
     return (
+
       movie.status === 'now-showing' &&
+
       (selectedLanguage === 'All Languages' || movie.language.includes(selectedLanguage)) &&
+
       (selectedGenre === 'All Genres' || movie.genre.includes(selectedGenre)) &&
+
       (
         !searchTerm ||
         movie.title.toLowerCase().includes(searchLower) ||
         movie.genre.toLowerCase().includes(searchLower) ||
         movie.language.toLowerCase().includes(searchLower)
       )
+
     );
+
   });
+
+
 
   const filteredUpcomingMovies = availableMoviesInCity.filter(movie => {
+
     const searchLower = searchTerm.toLowerCase();
+
     return (
+
       movie.status === 'upcoming' &&
+
       (selectedLanguage === 'All Languages' || movie.language.includes(selectedLanguage)) &&
+
       (selectedGenre === 'All Genres' || movie.genre.includes(selectedGenre)) &&
+
       (
         !searchTerm ||
         movie.title.toLowerCase().includes(searchLower) ||
         movie.genre.toLowerCase().includes(searchLower) ||
         movie.language.toLowerCase().includes(searchLower)
       )
+
     );
+
   });
 
-  const scrollLeft = () => sliderRef.current?.scrollBy({ left: -300, behavior: 'smooth' });
-  const scrollRight = () => sliderRef.current?.scrollBy({ left: 300, behavior: 'smooth' });
+
+
+  const scrollLeft = () =>
+    sliderRef.current?.scrollBy({ left: -300, behavior: 'smooth' });
+
+  const scrollRight = () =>
+    sliderRef.current?.scrollBy({ left: 300, behavior: 'smooth' });
+
+
 
   const handleSearch = (e) => {
+
     e.preventDefault();
-    if (searchTerm.trim()) alert(`Searching for: ${searchTerm}`);
+
+    if (searchTerm.trim()) {
+      alert(`Searching for: ${searchTerm}`);
+    }
+
   };
+
+
 
   const toggleDropdown = () => setShowLanguageDropdown(!showLanguageDropdown);
   const toggleDashboard = () => setShowDashboard(!showDashboard);
-  const closeDropdowns = () => { setShowDashboard(false); setShowLanguageDropdown(false); };
+
+  const closeDropdowns = () => {
+    setShowDashboard(false);
+    setShowLanguageDropdown(false);
+  };
+
+
 
   const handleAuthClick = () => {
+
     if (user) onGreetingClick();
     else onAuthButtonClick();
+
   };
 
-  // ⭐⭐⭐ ONLY IMPORTANT PART — do NOT modify functionality ⭐⭐⭐
+
+
   const handleDashboardItemClick = (item) => {
+
     if (item.label === "Your Data") {
-      onOpenUserData();   // calls App.jsx navigation
+
+      onOpenUserData();
       setShowDashboard(false);
       return;
+
     }
+
     alert(`Clicked: ${item.label}`);
     setShowDashboard(false);
+
   };
 
+
+
   const handleNotifyMe = (title, id, e) => {
+
     e.stopPropagation();
+
     if (!user) {
+
       alert("Please signup to get notifications");
       onAuthButtonClick(id);
       return;
+
     }
+
     alert(`You will be notified about "${title}"`);
+
   };
 
+
+
   const clearFilters = () => {
+
     setSelectedLanguage('All Languages');
     setSelectedGenre('All Genres');
     setSearchTerm('');
+
   };
+
+
+
+  // ===== UI STARTS HERE =====
 
   return (
     <div className="home-page">
