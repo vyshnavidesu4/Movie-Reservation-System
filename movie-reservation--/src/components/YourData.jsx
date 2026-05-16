@@ -1,7 +1,7 @@
 import React from "react";
 import "./YourData.css";
 
-const YourData = ({ user, onBack, onDeleteAccount }) => {
+const YourData = ({ user, onBack, onDeleteAccount, onLogout }) => {
 
   // Format registered date/time
   const formattedDate = user?.createdAt
@@ -22,49 +22,55 @@ const YourData = ({ user, onBack, onDeleteAccount }) => {
   };
 
   return (
-    <div className="userdata-page">
-      
-      {/* HEADER */}
-      <header className="userdata-header">
-        <button className="userdata-back-btn" onClick={onBack}>← Back</button>
-        <h1 className="userdata-title">Your Account Details</h1>
-      </header>
+    <div className="userdata-overlay" onClick={onBack}>
+      <div className="userdata-sidebar" onClick={(e) => e.stopPropagation()}>
+        
+        {/* HEADER */}
+        <header className="userdata-header">
+          <h1 className="userdata-title">Your Account Details</h1>
+          <button className="userdata-close-btn" onClick={onBack}>&times;</button>
+        </header>
 
-      {/* CARD */}
-      <div className="userdata-card">
-        <div className="userdata-row">
-          <span className="userdata-label">Preferred Name:</span>
-          <span className="userdata-value">{user?.preferredName}</span>
+        {/* DETAILS */}
+        <div className="userdata-content">
+          <div className="userdata-row">
+            <span className="userdata-label">Preferred Name:</span>
+            <span className="userdata-value">{user?.preferredName}</span>
+          </div>
+
+          <div className="userdata-row">
+            <span className="userdata-label">Username:</span>
+            <span className="userdata-value">{user?.username}</span>
+          </div>
+
+          <div className="userdata-row">
+            <span className="userdata-label">Email:</span>
+            <span className="userdata-value">{user?.email}</span>
+          </div>
+
+          <div className="userdata-row">
+            <span className="userdata-label">Mobile Number:</span>
+            <span className="userdata-value">{user?.mobile}</span>
+          </div>
+
+          <div className="userdata-row">
+            <span className="userdata-label">Registered On:</span>
+            <span className="userdata-value">{formattedDate}</span>
+          </div>
         </div>
 
-        <div className="userdata-row">
-          <span className="userdata-label">Username:</span>
-          <span className="userdata-value">{user?.username}</span>
+        {/* BUTTONS */}
+        <div className="userdata-actions">
+          <button className="userdata-logout-btn" onClick={onLogout}>
+            Logout
+          </button>
+          
+          <button className="userdata-delete-btn" onClick={handleDelete}>
+            Delete My Account
+          </button>
         </div>
 
-        <div className="userdata-row">
-          <span className="userdata-label">Email:</span>
-          <span className="userdata-value">{user?.email}</span>
-        </div>
-
-        <div className="userdata-row">
-          <span className="userdata-label">Mobile Number:</span>
-          <span className="userdata-value">{user?.mobile}</span>
-        </div>
-
-        <div className="userdata-row">
-          <span className="userdata-label">Registered On:</span>
-          <span className="userdata-value">{formattedDate}</span>
-        </div>
       </div>
-
-      {/* ⭐ DELETE ACCOUNT BUTTON */}
-      <div className="userdata-delete-wrapper">
-        <button className="userdata-delete-btn" onClick={handleDelete}>
-          Delete My Account
-        </button>
-      </div>
-
     </div>
   );
 };

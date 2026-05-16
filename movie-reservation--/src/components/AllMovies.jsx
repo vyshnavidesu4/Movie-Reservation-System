@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import './AllMovies.css';
 import API_BASE_URL from '../config';
 
-const AllMovies = ({ user, onLogout, onAuthButtonClick, onGreetingClick, onBackToHome, onMovieSelect, selectedCity, setSelectedCity }) => {
+const AllMovies = ({ user, onLogout, onAuthButtonClick, onGreetingClick, onBackToHome, onMovieSelect, selectedCity, setSelectedCity, onOpenUserData, onOpenNotifications, onOpenHistory, onOpenHelp }) => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('All Languages');
@@ -224,6 +224,26 @@ const AllMovies = ({ user, onLogout, onAuthButtonClick, onGreetingClick, onBackT
   };
 
   const handleDashboardItemClick = (item) => {
+    if (item.label === 'Your Data') {
+      onOpenUserData();
+      setShowDashboard(false);
+      return;
+    }
+    if (item.label === 'Your History') {
+      onOpenHistory();
+      setShowDashboard(false);
+      return;
+    }
+    if (item.label === 'Notifications') {
+      onOpenNotifications();
+      setShowDashboard(false);
+      return;
+    }
+    if (item.label === 'Help') {
+      onOpenHelp();
+      setShowDashboard(false);
+      return;
+    }
     alert(`Clicked: ${item.label}`);
     setShowDashboard(false);
   };

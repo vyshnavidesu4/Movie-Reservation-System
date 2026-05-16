@@ -1,0 +1,94 @@
+.your-history-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 100%);
+  color: white;
+  padding: 2rem 4rem;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.history-header h2 {
+  font-size: 2rem;
+  margin: 0;
+  color: #e50914;
+}
+
+.back-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.back-btn:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.history-card {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.history-info h3 {
+  margin-top: 0;
+  color: #fff;
+  font-size: 1.4rem;
+  margin-bottom: 15px;
+}
+
+.history-details-row {
+  display: flex;
+  gap: 30px;
+  color: #bbb;
+  margin-bottom: 8px;
+}
+
+.history-details-row strong {
+  color: #eee;
+}
+
+.rate-history-btn {
+  background-color: transparent;
+  color: #e50914;
+  border: 1px solid #e50914;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.rate-history-btn:hover {
+  background-color: #e50914;
+  color: white;
+}
+
+.no-history-msg {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #bbb;
+  margin-top: 50px;
+}

@@ -6,6 +6,7 @@ const RateNow = ({ movieTitle, onClose, onSubmitRating }) => {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [review, setReview] = useState('');
+  const [hashtags, setHashtags] = useState('');
 
   const handleStarClick = (value) => {
     setRating(value);
@@ -24,7 +25,7 @@ const RateNow = ({ movieTitle, onClose, onSubmitRating }) => {
       alert('Please select a rating before submitting');
       return;
     }
-    onSubmitRating(rating, review);
+    onSubmitRating(rating, review, hashtags);
     onClose();
   };
 
@@ -61,6 +62,16 @@ const RateNow = ({ movieTitle, onClose, onSubmitRating }) => {
         </div>
 
         <div className="review-section">
+          <label htmlFor="hashtags">Hashtags (Optional)</label>
+          <input
+            id="hashtags"
+            type="text"
+            style={{ width: "100%", padding: "10px", marginBottom: "15px", borderRadius: "8px", border: "1px solid #333", background: "rgba(255,255,255,0.05)", color: "white" }}
+            placeholder="e.g. #SuperDirection #GreatActing"
+            value={hashtags}
+            onChange={(e) => setHashtags(e.target.value)}
+          />
+
           <label htmlFor="review">Your Review (Optional)</label>
           <textarea
             id="review"

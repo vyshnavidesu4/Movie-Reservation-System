@@ -12,7 +12,10 @@ const Home = ({
   onMovieSelect,
   selectedCity,
   setSelectedCity,
-  onOpenUserData
+  onOpenUserData,
+  onOpenNotifications,
+  onOpenHistory,
+  onOpenHelp
 }) => {
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,6 +28,7 @@ const Home = ({
   const [genres, setGenres] = useState(["All Genres"]);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [notifyMsg, setNotifyMsg] = useState("");
 
   const sliderRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -283,36 +287,58 @@ const Home = ({
 
 
   const handleDashboardItemClick = (item) => {
-
     if (item.label === "Your Data") {
-
       onOpenUserData();
       setShowDashboard(false);
       return;
+    }
+    if (item.label === "Your History") {
+      onOpenHistory();
+      setShowDashboard(false);
+      return;
+    }
+    if (item.label === "Notifications") {
+      onOpenNotifications();
+      setShowDashboard(false);
+      return;
+    }
 
+    if (item.label === "Help") {
+      onOpenHelp();
+      setShowDashboard(false);
+      return;
     }
 
     alert(`Clicked: ${item.label}`);
     setShowDashboard(false);
-
   };
 
 
 
-  const handleNotifyMe = (title, id, e) => {
-
+  const handleNotifyMe = (title, id, e, movieReleaseDate) => {
     e.stopPropagation();
-
     if (!user) {
-
       alert("Please signup to get notifications");
       onAuthButtonClick(id);
       return;
-
     }
 
-    alert(`You will be notified about "${title}"`);
-
+    fetch(`${API_BASE_URL}/notifications/add`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: user.username,
+        movieId: id,
+        movieTitle: title,
+        releaseDate: movieReleaseDate || "Coming Soon"
+      })
+    })
+      .then(res => res.json())
+      .then(data => setNotifyMsg(data.msg))
+      .catch(err => {
+        console.error(err);
+        setNotifyMsg("Failed to add notification.");
+      });
   };
 
 
@@ -573,7 +599,7 @@ const Home = ({
 
                     <button 
                       className="update-btn" 
-                      onClick={(e)=>handleNotifyMe(movie.title, movie.id, e)}
+                      onClick={(e)=>handleNotifyMe(movie.title, movie.id, e, movie.releaseDate)}
                     >
                       Notify Me
                     </button>
@@ -589,6 +615,17 @@ const Home = ({
         </section>
 
       </main>
+
+      {/* Notify Popup */}
+      {notifyMsg && (
+        <div className="notify-popup-overlay" onClick={() => setNotifyMsg("")}>
+          <div className="notify-popup" onClick={e => e.stopPropagation()}>
+            <h3>Notification</h3>
+            <p>{notifyMsg}</p>
+            <button onClick={() => setNotifyMsg("")}>OK</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

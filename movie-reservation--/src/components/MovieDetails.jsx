@@ -6,10 +6,11 @@ import API_BASE_URL from '../config';
 const MovieDetails = ({ movieId, user, onLogout, onAuthButtonClick, onGreetingClick, onBack, selectedCity, setSelectedCity, onBookTickets }) => {
 
   const [movie, setMovie] = useState(null);
-  const [isSticky, setIsSticky] = useState(false);
   const [availableCities, setAvailableCities] = useState([]);
   const [showRateNow, setShowRateNow] = useState(false);
   const [cityTheatres, setCityTheatres] = useState({});
+  const [reviews, setReviews] = useState([]);
+  const [notifyMsg, setNotifyMsg] = useState("");
 
 
   // ⭐ FIND CITIES WHERE MOVIE IS AVAILABLE
@@ -52,7 +53,11 @@ const MovieDetails = ({ movieId, user, onLogout, onAuthButtonClick, onGreetingCl
           language: movie.language.join(","),
           status: movie.status,
           duration: movie.duration,
-          releaseDate: movie.releaseDate
+          releaseDate: movie.releaseDate,
+          trailerLink: movie.trailerLink,
+          story: movie.story || "",
+          cast: movie.cast || [],
+          crew: movie.crew || []
         }));
 
         const foundMovie = formattedMovies.find(m => m.id === parseInt(movieId));
@@ -60,6 +65,11 @@ const MovieDetails = ({ movieId, user, onLogout, onAuthButtonClick, onGreetingCl
 
       })
       .catch(err => console.error(err));
+
+    fetch(`${API_BASE_URL}/reviews/${movieId}`)
+      .then(res => res.json())
+      .then(data => setReviews(data))
+      .catch(err => console.error("Error fetching reviews", err));
 
   }, [movieId]);
 
@@ -90,19 +100,6 @@ const MovieDetails = ({ movieId, user, onLogout, onAuthButtonClick, onGreetingCl
   }, [movie, cityTheatres]);
 
 
-  // ⭐ SCROLL LISTENER
-  useEffect(() => {
-
-    const handleScroll = () => {
-      setIsSticky(window.scrollY > 400);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-
-    return () => window.removeEventListener('scroll', handleScroll);
-
-  }, []);
-
 
   // ⭐ BOOK TICKETS
   const handleBookTickets = () => {
@@ -124,26 +121,33 @@ const MovieDetails = ({ movieId, user, onLogout, onAuthButtonClick, onGreetingCl
 
   // ⭐ NOTIFY ME
   const handleNotifyMe = () => {
-
     if (!user) {
       alert('Please signup to get notifications');
       onAuthButtonClick(movieId);
       return;
     }
 
-    alert(`You will be notified about "${movie.title}"`);
+    fetch(`${API_BASE_URL}/notifications/add`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: user.username,
+        movieId: movie.id || movieId,
+        movieTitle: movie.title,
+        releaseDate: movie.releaseDate || "Coming Soon"
+      })
+    })
+      .then(res => res.json())
+      .then(data => setNotifyMsg(data.msg))
+      .catch(err => {
+        console.error(err);
+        setNotifyMsg("Failed to add notification.");
+      });
   };
 
 
   const handleRateNow = () => {
-
-    if (!user) {
-      alert('Please sign in to rate movies');
-      onAuthButtonClick(movieId);
-      return;
-    }
-
-    setShowRateNow(true);
+    alert("Please go to 'Your History' from the Dashboard to rate a movie you've watched.");
   };
 
 
@@ -182,200 +186,178 @@ const MovieDetails = ({ movieId, user, onLogout, onAuthButtonClick, onGreetingCl
   }
 
 
-  const castData = getCastData(movie.title);
-  const crewData = getCrewData(movie.title);
 
   const isNowShowing = movie.status === 'now-showing';
   const mainButtonText = isNowShowing ? 'Book Tickets' : 'Notify Me';
   const mainButtonHandler = isNowShowing ? handleBookTickets : handleNotifyMe;
-  const stickyButtonText = isNowShowing ? 'Book Tickets' : 'Notify Me';
 
   return (
     <div className="movie-details-page">
+      {/* Header - Match Home structure but with Back button */}
       <header className="header">
         <div className="header-content">
-          <button className="back-button" onClick={onBack}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
-            </svg>
-            Back
-          </button>
-          
-          <h1 className="logo">MOVIEBUZZ</h1>
+          <div className="header-left">
+            <button className="back-btn-header" onClick={onBack}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+              </svg>
+              <span>BACK</span>
+            </button>
+            <h1 className="logo">MOVIEBUZZ</h1>
+          </div>
 
-          <select 
-            className="city-select"
-            value={selectedCity}
-            onChange={(e) => setSelectedCity(e.target.value)}
-          >
-            <option value="Select City">Select City</option>
-            {availableCities.map(city => (
-              <option key={city} value={city}>{city}</option>
-            ))}
-          </select>
+          <div className="header-right">
+             <select 
+              className="city-select"
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+            >
+              <option value="Select City">Select City</option>
+              {availableCities.map(city => (
+                <option key={city} value={city}>{city}</option>
+              ))}
+            </select>
 
-          <button className="auth-btn" onClick={handleAuthClick}>
-            {user ? `Hello! ${user.preferredName}` : 'Signup/Login'}
-          </button>
-        </div>
-      </header>
-
-      <div className="movie-hero">
-        <div className="movie-poster-large">
-          <img src={movie.image} alt={movie.title} />
-        </div>
-        
-        <div className="movie-info-sidebar">
-          <div className="sticky-info">
-            <h1>{movie.title}</h1>
-            
-            <div className="rating-section">
-              <div className="rating-display">
-                <span className="rating-star">⭐</span>
-                <span className="rating-value">{movie.rating}</span>
-                <span className="rating-votes">{movie.votes}</span>
-              </div>
-              <button className="rate-now-btn" onClick={handleRateNow}>
-                Rate Now
-              </button>
-            </div>
-
-            <div className="movie-meta">
-              <div className="meta-item">
-                <span className="meta-label">Language:</span>
-                <span className="meta-value">{movie.language}</span>
-              </div>
-              <div className="meta-item">
-                <span className="meta-label">Duration:</span>
-                <span className="meta-value">{movie.duration}</span>
-              </div>
-              <div className="meta-item">
-                <span className="meta-label">Genre:</span>
-                <span className="meta-value">{movie.genre}</span>
-              </div>
-              <div className="meta-item">
-                <span className="meta-label">Release Date:</span>
-                <span className="meta-value">{movie.releaseDate}</span>
-              </div>
-            </div>
-
-            <button className="book-tickets-btn" onClick={mainButtonHandler}>
-              {mainButtonText}
+            <button className="greeting-btn" onClick={handleAuthClick}>
+               {user ? `Hello! ${user.preferredName}` : 'Signup / Login'}
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className={`sticky-movie-header ${isSticky ? 'sticky' : ''}`}>
-        <div className="sticky-header-content">
-          <h2>{movie.title}</h2>
-          <button className="sticky-book-btn" onClick={mainButtonHandler}>
-            {stickyButtonText}
-          </button>
+      {/* Hero Section: Vertical Poster + Info Side-by-Side */}
+      <div className="movie-hero-container">
+        <div className="movie-hero-content">
+          <div className="movie-poster-vertical">
+            <img src={movie.image} alt={movie.title} />
+          </div>
+          <div className="movie-data-right">
+            <h1 className="movie-title-details">{movie.title}</h1>
+            <div className="quick-meta">
+               <span className="meta-rating">⭐ {movie.rating}</span>
+               <span className="meta-votes">{movie.votes}</span>
+            </div>
+            <div className="detail-tags">
+               <div className="tag-row">
+                  <span className="tag-label">Language:</span>
+                  <span className="tag-val">{movie.language}</span>
+               </div>
+               <div className="tag-row">
+                  <span className="tag-label">Duration:</span>
+                  <span className="tag-val">{movie.duration}</span>
+               </div>
+               <div className="tag-row">
+                  <span className="tag-label">Genre:</span>
+                  <span className="tag-val">{movie.genre}</span>
+               </div>
+               <div className="tag-row">
+                  <span className="tag-label">Release Date:</span>
+                  <span className="tag-val">{movie.releaseDate}</span>
+               </div>
+            </div>
+            
+            <div className="cta-buttons">
+              <button className="btn-primary-red" onClick={mainButtonHandler}>
+                {mainButtonText}
+              </button>
+              <button className="btn-secondary-dark" onClick={() => window.open(movie.trailerLink, '_blank')}>
+                Watch Trailer
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="movie-content">
-        <section className="content-section">
-          <h2>About the Movie</h2>
-          <p className="movie-description">
-            {movie.title} is an exciting cinematic experience that brings together incredible storytelling, 
-            stunning visuals, and powerful performances. This movie takes you on an unforgettable journey 
-            through its engaging narrative and breathtaking action sequences. With a perfect blend of 
-            emotion and entertainment, it's a must-watch for all cinema lovers.
+      <div className="movie-content-container">
+        {/* About Section */}
+        <section className="movie-section">
+          <h2 className="section-title">The Story</h2>
+          <p className="movie-description-text">
+            {movie.story || `${movie.title} is an epic journey designed to captivate your imagination. Step into a world where every scene is crafted with cinematic excellence. Experience the thrill, the emotion, and the spectacle that makes this movie a must-watch event of the season.`}
           </p>
         </section>
 
-        <section className="content-section">
-          <h2>Cast</h2>
-          <div className="cast-list">
-            {castData.map((person, index) => (
-              <div key={index} className="cast-item">
-                <strong>{person.name}</strong>
-                <span>{person.role}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* Cast Section */}
+        {movie.cast && movie.cast.length > 0 && (
+          <section className="movie-section">
+            <h2 className="section-title">Lead Cast</h2>
+            <div className="cast-grid">
+              {movie.cast.map((person, index) => (
+                <div key={index} className="cast-card">
+                  <div className="cast-avatar">
+                    <img src={person.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=333&color=fff&size=200`} alt={person.name} />
+                  </div>
+                  <div className="cast-info">
+                    <span className="cast-name">{person.name}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
-        <section className="content-section">
-          <h2>Crew</h2>
-          <div className="crew-list">
-            {crewData.map((member, index) => (
-              <div key={index} className="crew-item">
-                <strong>{member.role}</strong>
-                <span>{member.name}</span>
-              </div>
-            ))}
-          </div>
+        {/* Crew Section */}
+        {movie.crew && movie.crew.length > 0 && (
+          <section className="movie-section">
+            <h2 className="section-title">Crew</h2>
+            <div className="crew-grid">
+              {movie.crew.map((member, index) => (
+                <div key={index} className="crew-card">
+                  <div className="crew-avatar">
+                    <img src={member.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=222&color=fff&size=200`} alt={member.name} />
+                  </div>
+                  <div className="crew-info">
+                    <span className="crew-role">{member.role}</span>
+                    <span className="crew-name">{member.name}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Reviews Section / Audience Buzz */}
+        <section className="movie-section">
+          <h2 className="section-title">Audience Buzz</h2>
+          {reviews.length === 0 ? (
+            <p className="no-reviews-msg text-center">No reviews yet. Be the first to share your thoughts!</p>
+          ) : (
+            <div className="reviews-buzz-grid">
+              {reviews.map(review => (
+                <div key={review._id} className="buzz-card">
+                  <div className="buzz-card-header">
+                    <div className="buzz-user">
+                      <div>
+                         <span className="buzz-username">{review.username}</span>
+                         <div className="buzz-rating">⭐⭐⭐⭐⭐ <span>{review.rating}/10</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="buzz-body">
+                     {review.hashtags && <p className="buzz-hashtags">{review.hashtags}</p>}
+                     <p className="buzz-text">"{review.reviewText || "Amazing movie, highly recommended!"}"</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
 
-      {/* RateNow Modal */}
-      {showRateNow && movie && (
-        <RateNow
-          movieTitle={movie.title}
-          onClose={handleCloseRateNow}
-          onSubmitRating={handleSubmitRating}
-        />
+      {notifyMsg && (
+        <div className="notify-popup-overlay" onClick={() => setNotifyMsg("")}>
+          <div className="notify-popup" onClick={e => e.stopPropagation()}>
+            <h3>Notification</h3>
+            <p>{notifyMsg}</p>
+            <button onClick={() => setNotifyMsg("")}>OK</button>
+          </div>
+        </div>
       )}
+
     </div>
   );
 };
 
-// Helper functions
-const getCastData = (movieTitle) => {
-  const castMap = {
-    'JOLLY L.B3': [
-      { name: 'Akshay Kumar', role: 'Actor' },
-      { name: 'Arshad Warsi', role: 'Actor' },
-      { name: 'Saurabh Shukla', role: 'Actor' },
-      { name: 'Amrita Rao', role: 'Actor' },
-      { name: 'Huma Qureshi', role: 'Actor' }
-    ],
-    'Singham Again': [
-      { name: 'Ajay Devgn', role: 'Actor' },
-      { name: 'Kareena Kapoor', role: 'Actor' },
-      { name: 'Akshay Kumar', role: 'Actor' },
-      { name: 'Tiger Shroff', role: 'Actor' },
-      { name: 'Deepika Padukone', role: 'Actor' }
-    ]
-  };
-  
-  return castMap[movieTitle] || [
-    { name: 'Lead Actor', role: 'Actor' },
-    { name: 'Lead Actress', role: 'Actor' },
-    { name: 'Supporting Actor', role: 'Actor' },
-    { name: 'Supporting Actress', role: 'Actor' },
-    { name: 'Villain', role: 'Actor' }
-  ];
-};
 
-const getCrewData = (movieTitle) => {
-  const crewMap = {
-    'JOLLY L.B3': [
-      { role: 'Director, Writer', name: 'Subhash Kapoor' },
-      { role: 'Musician', name: 'Anurag Saikia' },
-      { role: 'Musician', name: 'Vikram Montrose' },
-      { role: 'Editor', name: 'Chandrashekhar Prajapati' },
-      { role: 'Background Score', name: 'Mangesh Dhakde' }
-    ],
-    'Singham Again': [
-      { role: 'Director', name: 'Rohit Shetty' },
-      { role: 'Producer', name: 'Rohit Shetty Picturez' },
-      { role: 'Music Director', name: 'Tanishk Bagchi' },
-      { role: 'Cinematographer', name: 'Jomon T. John' },
-      { role: 'Screenplay', name: 'Yunus Sajawal' }
-    ]
-  };
-  
-  return crewMap[movieTitle] || [
-    { role: 'Director', name: 'Famous Director' },
-    { role: 'Producer', name: 'Production House' },
-    { role: 'Music Director', name: 'Renowned Composer' },
-    { role: 'Cinematographer', name: 'Award Winning DOP' },
-    { role: 'Screenplay', name: 'Talented Writer' }
-  ];
-};
 
 export default MovieDetails;

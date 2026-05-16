@@ -1,0 +1,218 @@
+.help-page {
+  min-height: 100vh;
+  background: #000;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+}
+
+.help-header {
+  background: #000;
+  border-bottom: 1px solid #1a1a1a;
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 2000;
+}
+
+.help-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 0 20px;
+}
+
+.back-btn-help {
+  background: transparent;
+  border: 1px solid #333;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 15px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.back-btn-help:hover {
+  background: #111;
+  border-color: #e50914;
+}
+
+.help-hero {
+  text-align: center;
+  padding: 4rem 20px;
+  background: linear-gradient(to bottom, #111, #000);
+}
+
+.help-hero h2 {
+  font-size: 3rem;
+  font-weight: 900;
+  margin-bottom: 1rem;
+  background: linear-gradient(45deg, #fff, #e50914);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.help-hero p {
+  font-size: 1.2rem;
+  color: #888;
+}
+
+.help-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem 0;
+  padding: 0 20px;
+}
+
+.help-tab {
+  background: #111;
+  color: #888;
+  border: 1px solid #222;
+  padding: 12px 30px;
+  border-radius: 30px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.help-tab.active {
+  background: #e50914;
+  color: #fff;
+  border-color: #e50914;
+  box-shadow: 0 0 20px rgba(229, 9, 20, 0.3);
+}
+
+.help-tab:hover:not(.active) {
+  border-color: #444;
+  color: #fff;
+}
+
+.help-body {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 20px 5rem;
+}
+
+/* FAQ Styling */
+.faq-item {
+  background: #111;
+  border: 1px solid #222;
+  padding: 2rem;
+  border-radius: 15px;
+  margin-bottom: 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.faq-item:hover {
+  transform: translateY(-5px);
+  border-color: #333;
+}
+
+.faq-item h3 {
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+  color: #e50914;
+}
+
+.faq-item p {
+  color: #aaa;
+  line-height: 1.6;
+}
+
+/* Guides Styling */
+.guide-card {
+  background: #111;
+  border-left: 4px solid #e50914;
+  padding: 2.5rem;
+  border-radius: 0 15px 15px 0;
+  margin-bottom: 2rem;
+}
+
+.guide-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.guide-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.guide-card li {
+  color: #ccc;
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.guide-card li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: #e50914;
+}
+
+/* Contact Styling */
+.contact-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.contact-card {
+  background: #111;
+  padding: 3rem 2rem;
+  border-radius: 20px;
+  text-align: center;
+  border: 1px solid #222;
+}
+
+.contact-icon {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+.contact-card h3 {
+  margin-bottom: 1rem;
+}
+
+.contact-card p {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e50914;
+  margin-bottom: 0.5rem;
+}
+
+.contact-card span {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.help-footer {
+  text-align: center;
+  padding: 3rem;
+  border-top: 1px solid #1a1a1a;
+  color: #444;
+}
+
+@media (max-width: 768px) {
+  .help-hero h2 {
+    font-size: 2rem;
+  }
+  
+  .help-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .help-tab {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+}

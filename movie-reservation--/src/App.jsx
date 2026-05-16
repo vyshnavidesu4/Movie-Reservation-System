@@ -8,7 +8,10 @@ import BookingSelection from './components/BookingSelection';
 import SeatSelection from './components/SeatSelection';
 import Payment from './components/Payment';
 import YourData from './components/YourData';
+import YourHistory from './components/YourHistory';
+import Notifications from './components/Notifications';
 import TicketPage from './components/TicketPage';
+import Help from './components/Help';
 import './App.css';
 import API_BASE_URL from './config';
 
@@ -25,6 +28,8 @@ function App() {
 
   // ⭐ NEW — redirect after login/signup
   const [goToUserDataAfterAuth, setGoToUserDataAfterAuth] = useState(false);
+  const [isUserDataOpen, setIsUserDataOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   // ⭐ NEW — Ticket Data (for TicketPage)
   const [ticketData, setTicketData] = useState(null);
@@ -34,7 +39,8 @@ function App() {
 
     if (goToUserDataAfterAuth) {
       setGoToUserDataAfterAuth(false);
-      setCurrentPage("userdata");
+      setCurrentPage(pageBeforeAuth); // go back to the page they were on
+      setIsUserDataOpen(true);
       return;
     }
 
@@ -52,7 +58,8 @@ function App() {
 
     if (goToUserDataAfterAuth) {
       setGoToUserDataAfterAuth(false);
-      setCurrentPage("userdata");
+      setCurrentPage(pageBeforeAuth); // go back to the page they were on
+      setIsUserDataOpen(true);
       return;
     }
 
@@ -141,7 +148,32 @@ function App() {
       setCurrentPage("login");
       return;
     }
-    setCurrentPage("userdata");
+    setIsUserDataOpen(true);
+  };
+
+  // OPEN NOTIFICATIONS
+  const handleOpenNotifications = () => {
+    if (!user) {
+      alert("Please login to view notifications.");
+      setPageBeforeAuth(currentPage);
+      setCurrentPage("login");
+      return;
+    }
+    setIsNotificationsOpen(true);
+  };
+
+  const handleOpenHistory = () => {
+    if (!user) {
+      alert("Please login to view history.");
+      setPageBeforeAuth(currentPage);
+      setCurrentPage("login");
+      return;
+    }
+    setCurrentPage("yourhistory");
+  };
+
+  const handleOpenHelp = () => {
+    setCurrentPage("help");
   };
 
   // DELETE ACCOUNT
@@ -194,6 +226,10 @@ function App() {
             onMovieSelect={(movieId) => handleMovieSelect(movieId, 'allmovies')}
             selectedCity={selectedCity}
             setSelectedCity={setSelectedCity}
+            onOpenUserData={handleOpenUserData}
+            onOpenNotifications={handleOpenNotifications}
+            onOpenHistory={handleOpenHistory}
+            onOpenHelp={handleOpenHelp}
           />
         );
 
@@ -238,6 +274,7 @@ function App() {
       case 'payment':
         return (
           <Payment
+            user={user}
             selectedSeats={selectedSeats}
             bookingSelection={bookingSelection}
             selectedCity={selectedCity}
@@ -256,12 +293,18 @@ function App() {
           />
         );
 
-      case 'userdata':
+      case 'yourhistory':
         return (
-          <YourData
+          <YourHistory
             user={user}
             onBack={() => setCurrentPage('home')}
-            onDeleteAccount={handleDeleteAccount}
+          />
+        );
+
+      case 'help':
+        return (
+          <Help
+            onBack={() => setCurrentPage('home')}
           />
         );
 
@@ -279,12 +322,39 @@ function App() {
             selectedCity={selectedCity}
             setSelectedCity={setSelectedCity}
             onOpenUserData={handleOpenUserData}
+            onOpenNotifications={handleOpenNotifications}
+            onOpenHistory={handleOpenHistory}
+            onOpenHelp={handleOpenHelp}
           />
         );
     }
   };
 
-  return <div className="App">{renderPage()}</div>;
+  return (
+    <div className="App">
+      {renderPage()}
+      {isUserDataOpen && (
+        <YourData
+          user={user}
+          onBack={() => setIsUserDataOpen(false)}
+          onDeleteAccount={() => {
+            handleDeleteAccount();
+            setIsUserDataOpen(false);
+          }}
+          onLogout={() => {
+            handleLogout();
+            setIsUserDataOpen(false);
+          }}
+        />
+      )}
+      {isNotificationsOpen && (
+        <Notifications
+          user={user}
+          onClose={() => setIsNotificationsOpen(false)}
+        />
+      )}
+    </div>
+  );
 }
 
 export default App;

@@ -3,7 +3,7 @@ import axios from "axios";
 import './Payment.css';
 import API_BASE_URL from '../config';
 
-const Payment = ({ selectedSeats, bookingSelection, selectedCity, movieId, onPaymentSuccess, onBack }) => {
+const Payment = ({ user, selectedSeats, bookingSelection, selectedCity, movieId, onPaymentSuccess, onBack }) => {
 
   const [allMovies, setAllMovies] = useState([]);
 
@@ -135,6 +135,24 @@ const Payment = ({ selectedSeats, bookingSelection, selectedCity, movieId, onPay
           seats: selectedSeats
         }
       );
+
+      // Save Booking for "Your History"
+      if (user) {
+        await axios.post(
+          `${API_BASE_URL}/bookings/add`,
+          {
+            username: user.username,
+            movieId: movieId,
+            movieTitle: movie.title,
+            city: selectedCity,
+            theatre: bookingSelection.theatre.name,
+            time: bookingSelection.time,
+            date: bookingSelection.date.toDateString(),
+            seats: selectedSeats.map(s => s + 1),
+            amount: totalPrice
+          }
+        );
+      }
 
       alert('Payment successful! Your tickets are booked.');
 

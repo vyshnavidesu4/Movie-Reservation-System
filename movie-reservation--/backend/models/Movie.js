@@ -33,7 +33,28 @@ const movieSchema = new mongoose.Schema({
 
   duration: String,
 
-  releaseDate: String
+  releaseDate: String,
+
+  trailerLink: {
+    type: String,
+    default: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  },
+
+  story: {
+    type: String,
+    default: ""
+  },
+
+  cast: [{
+    name: { type: String, required: true },
+    image: { type: String, required: true }
+  }],
+
+  crew: [{
+    name: { type: String, required: true },
+    image: { type: String, required: true },
+    role: { type: String, required: true }
+  }]
 
 }, { timestamps: true });
 
